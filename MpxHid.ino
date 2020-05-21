@@ -4,7 +4,7 @@
     (c)2018 Pawel A. Hernik
     YouTube video: https://youtu.be/GHULqZpVpz4
     
-    Changes and additions by Michaelo
+    Changes and additions by Michaelo (c) 2020
 */
 
 #include <avr/sleep.h>
@@ -76,9 +76,7 @@ int m_Top_Line = 0;       // global storage for top menu item to draw
 int m_Items_Per_Page = 6; // menus per page to draw (depends on font size)
 int m_Total_Items = 8;    // total menus items (depends on font size)
 int m_Current_Mode = -1;  // global storage current menu mode
-
-int oldPos = 0;
-
+int oldPos = 0;           // global storage
 
 void initEncoder()
 {
@@ -186,7 +184,6 @@ void setContrast()
   lcd.fillWin(0, 2, encoderPos, 1, 0xfe);
 
   if (encoderPos < M_Max_Cols) lcd.fillWin(encoderPos, 2, M_Max_Cols - encoderPos, 1, 0);
-
   lcd.setContrast(encoderPos * 2);
 }
 
@@ -209,7 +206,6 @@ void endMenu()
       case 2: bas = encoderPos; break;
       case 3: tre = encoderPos; break;
     }
-
     m_Current_Mode = -1;
     lcd.clrScr();
     encoderPos = oldPos;
@@ -340,9 +336,7 @@ void doEncoderA() // Interrupt on A changing state
   if ( digitalRead(encoderPinA) != A_set ) // debounce once more
   {
     A_set = !A_set;
-
     if ( A_set && !B_set ) rotationPos = 1; // adjust counter + if A leads B
-
     rotating = false;
   }
 }
@@ -354,9 +348,7 @@ void doEncoderB()  // Interrupt on B changing state, same as A above
   if ( digitalRead(encoderPinB) != B_set )
   {
     B_set = !B_set;
-
     if ( B_set && !A_set ) rotationPos = -1; //  adjust counter - 1 if B leads A
-
     rotating = false;
   }
 }

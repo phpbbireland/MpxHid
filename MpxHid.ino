@@ -1,13 +1,11 @@
 /*
     Original Source...
+
     (c)2018 Pawel A. Hernik
     YouTube video: https://youtu.be/GHULqZpVpz4
 
-    Original code was for Pro Mini but as it doesn't suppport HID, it required changing...
-    Also, I required biod boot support so using HID-Project.h.
-    
-    All other code Michaelo (c) 2020
-    Code is working but in early development... 24 May 2020
+    Original code was for Pro/ Pro Mini as it doesn't suppport HID, I used Pro Micro (sleep code not supported) and HID.
+    Testing: Friday 12:36 working...
 */
 
 #include <avr/sleep.h>
@@ -62,6 +60,7 @@ int oldPos = 0;
 int mint2;
 int maxt2;
 int started = 0;
+int general = 0x01;
 
 void initEncoder()
 {
@@ -176,39 +175,38 @@ void setup()
 void setBacklight()
 {
   if (encoderPos > 84) encoderPos = 84;
-
-  snprintf(buf, 6, " %d ", encoderPos * 255 / 84);
-
-  lcd.setFont(Small5x7PL);
+  int pcent = encoderPos * 255 / 84;
+  
+  snprintf(buf, 6, " %d ", pcent);
+  
+  lcd.setFont(c64enh);
   lcd.setCharMinWd(5);
   lcd.setDigitMinWd(5);
   lcd.printStr(ALIGN_CENTER, 1, buf);
   lcd.printStr(ALIGN_LEFT, 1, "000");
   lcd.printStr(ALIGN_RIGHT, 1, "255");
   lcd.fillWin(0, 2, encoderPos, 1, 0xfc);
-
+  
   if (encoderPos < 84) lcd.fillWin(encoderPos, 2, 84 - encoderPos, 1, 0);
-
-  analogWrite(N5110_BACKLIGHT, 255 - encoderPos * 3);
+  
+  analogWrite(N5110_BACKLIGHT, 255-pcent);
 }
 
 void setContrast()
 {
-  if (encoderPos > 63) encoderPos = 63;
-
-  snprintf(buf, 6, "%0d", encoderPos * 2);
-
+  static bool start = false;
+  
+  if(start == false) // set mid position starting //
+  {
+    start = true; encoderPos = 39;
+  } 
+  // usable contrast for this display
+  if (encoderPos > 51) encoderPos = 51; 
+  if (encoderPos < 27) encoderPos = 27;
   lcd.setFont(Small5x7PL);
-  lcd.setCharMinWd(5);
-  lcd.setDigitMinWd(5);
-  lcd.printStr(28, 1, buf);
-  lcd.printStr(ALIGN_LEFT, 1, "00");
-  lcd.printStr(58, 1, "7F");
-  lcd.fillWin(0, 2, encoderPos, 1, 0xfe);
-
-  if (encoderPos < 84) lcd.fillWin(encoderPos, 2, 84 - encoderPos, 1, 0);
-
-  lcd.setContrast(encoderPos * 2);
+  lcd.printStr(ALIGN_CENTER, 2, "Adjust");
+  lcd.printStr(ALIGN_CENTER, 3, "Contrast");
+  lcd.setContrast(encoderPos);
 }
 
 void (*doReset)(void) = 0;
@@ -218,7 +216,7 @@ void reboot()
   if(encoderPos >= 1*2) encoderPos = 1*2;
   
   int st = encoderPos/2;
-  lcd.setFont(c64enh);
+  lcd.setFont(Small5x7PL);
   lcd.printStr(ALIGN_CENTER, 1, "Reboot?");
   lcd.setInvert(st?0:1);
   lcd.printStr(10, 3, " NO ");
@@ -298,6 +296,13 @@ void drawMenuSlider()
   debugReport();
 }
 
+/*
+ * The encoderPos incrementeds or decremented with left and right clicks of the rotary encoder.
+ * It can represent any signed integer but we limit from 0 to 84 (width of display).
+ * Pawel appears to multiply the value by 2 oe 3 to achieve scaling up to 255, we multiply by 2 
+ * to give 168 and map values to achieve desired outcome (end points can vary 100 - 700).
+ */
+ 
 void setLevels(void)
 {
   int cper = 0;
@@ -318,7 +323,6 @@ void setLevels(void)
 
   lcd.setCharMinWd(5);
   lcd.setDigitMinWd(5);
-
   lcd.printStr(ALIGN_CENTER, 5, buf);
   lcd.fillWin(0, 2, encoderPos, 1, 0xfe);
   if (encoderPos < 84) lcd.fillWin(encoderPos, 2, 84 - encoderPos, 1, 0);
@@ -341,15 +345,15 @@ void handleMenu()
               }
               if (readButton())
               {
-                setMenu(encoderPos); // setMenu will compensate for menuStart
+                setMenu(encoderPos); // setMenu function adds menuStart variable //
               }
               break;
 
-    case 0:   lcd.setFont(c64enh); lcd.printStr(ALIGN_CENTER, 4, "       "); setLevels();  break; //volcurpos = encoderPos;
-    case 1:   lcd.setFont(c64enh); lcd.printStr(ALIGN_CENTER, 4, "       "); setLevels();  break; //surcurpos = encoderPos;
-    case 2:   lcd.setFont(c64enh); lcd.printStr(ALIGN_CENTER, 4, "       "); setLevels();  break; //bascurpos = encoderPos;
-    case 3:   lcd.setFont(c64enh); lcd.printStr(ALIGN_CENTER, 4, "       "); setLevels();  break; //trecurpos = encoderPos;
-    case 4:   lcd.setFont(c64enh); lcd.printStr(ALIGN_CENTER, 4, "       "); intracks = 1; break; 
+    case 0:   lcd.setFont(Small5x7PL); lcd.printStr(ALIGN_CENTER, 4, "       "); setLevels();  break; //volcurpos = encoderPos;
+    case 1:   lcd.setFont(Small5x7PL); lcd.printStr(ALIGN_CENTER, 4, "       "); setLevels();  break; //surcurpos = encoderPos;
+    case 2:   lcd.setFont(Small5x7PL); lcd.printStr(ALIGN_CENTER, 4, "       "); setLevels();  break; //bascurpos = encoderPos;
+    case 3:   lcd.setFont(Small5x7PL); lcd.printStr(ALIGN_CENTER, 4, "       "); setLevels();  break; //trecurpos = encoderPos;
+    case 4:   lcd.setFont(Small5x7PL); lcd.printStr(ALIGN_CENTER, 4, "       "); intracks = 1; break; 
     case 5:   setBacklight(); break;
     case 6:   setContrast(); break;
     case 7:   reboot(); break;
@@ -532,7 +536,7 @@ void tracks(void)
   else
   {
     setMenu(4);
-    lcd.setFont(c64enh); lcd.printStr(ALIGN_CENTER, 4, "       ");
+    lcd.setFont(Small5x7PL); lcd.printStr(ALIGN_CENTER, 4, "       ");
     lcd.printStr(ALIGN_CENTER, 4, "Press to Select");
     intracks = 0;
   }

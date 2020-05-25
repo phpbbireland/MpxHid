@@ -514,10 +514,10 @@ void process_encoder(int k)
   
   switch(menuMode)
   {
-    case 0: if(k == 1) BootKeyboard.press('.'); else BootKeyboard.press(','); break; // volume
-    case 1: if(k == 1) BootKeyboard.press(0x2827); else BootKeyboard.press(0x273b); break; // surround
-    case 2: if(k == 1) BootKeyboard.press(0x2822); else BootKeyboard.press(0x273a); break; // bass
-    case 3: if(k == 1) BootKeyboard.press(0x1b7d); else BootKeyboard.press(0x1a7b); break; //treble
+    case 0: if(k == 1) BootKeyboard.press(46); else BootKeyboard.press(44); break; // volume , .
+    case 1: if(k == 1) BootKeyboard.press(39); else BootKeyboard.press(59); break; // surround ; '
+    case 2: if(k == 1) BootKeyboard.press(34); else BootKeyboard.press(58); break; // bass : @
+    case 3: if(k == 1) BootKeyboard.press(125); else BootKeyboard.press(123); break; //treble { }
     case 4: if(k == 1) BootKeyboard.press(KEY_DOWN_ARROW); else BootKeyboard.press(KEY_UP_ARROW); break;
     default: break;
   }

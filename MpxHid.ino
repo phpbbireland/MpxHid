@@ -23,7 +23,7 @@
 #include "small5x7_font.h"
 #include "small5x7bold_font.h"
 
-// uncomment to write min/max to EEEPROM //#define USE_EEPROM
+// could add function prototypes here so as to compile in VSC... later perhaps //
 
 #define N5110_RST       9
 #define N5110_CS        10
@@ -299,7 +299,7 @@ void drawMenuSlider()
 /*
  * The encoderPos incrementeds or decremented with left and right clicks of the rotary encoder.
  * It can represent any signed integer but we limit from 0 to 84 (width of display).
- * Pawel appears to multiply the value by 2 oe 3 to achieve scaling up to 255, we multiply by 2 
+ * Pawel appears to multiply the value by 2 or 3 to achieve scaling up to 255, we multiply by 2 
  * to give 168 and map values to achieve desired outcome (end points can vary 100 - 700).
  */
  
@@ -524,19 +524,22 @@ void process_encoder(int k)
   BootKeyboard.releaseAll();
 }
 
-void tracks(void)
+void tracks(void) // not implemented yet
 {
   if(intracks == 1 && readButton() != 0)
   {
-    BootKeyboard.press(KEY_RETURN); BootKeyboard.releaseAll();
-    menuMode = 4; lcd.clrScr(); intracks = 0;
+    BootKeyboard.press(KEY_RETURN);
+    BootKeyboard.releaseAll();
+    menuMode = 4;
+    lcd.clrScr();
     intracks = 0;
     setMenu(4);
   }
   else
   {
     setMenu(4);
-    lcd.setFont(Small5x7PL); lcd.printStr(ALIGN_CENTER, 4, "       ");
+    lcd.setFont(Small5x7PL);
+    lcd.printStr(ALIGN_CENTER, 4, "       ");
     lcd.printStr(ALIGN_CENTER, 4, "Press to Select");
     intracks = 0;
   }

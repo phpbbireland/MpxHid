@@ -28,9 +28,9 @@ static byte pinS = 4;
 static byte oldAction;
 static byte newAction;
 
-volatile byte aMask  = 0;
-volatile byte bMask  = 0;
-volatile byte action = 0;        // Rotary Encoder Action: 0 = none, 1 = left rotation, 2 = right rotation, 3 = button press/down, 4 = button release/up, 5 = long press.
+volatile byte aMask  = 0;       // 
+volatile byte bMask  = 0;       //
+volatile byte action = 0;       // Rotary Encoder Action: 0 = none, 1 = left rotation, 2 = right rotation, 3 = button press/down, 4 = button release/up, 5 = long press.
 
 volatile int encoderPos  = 0;
 volatile byte oldEncPos  = 0;
@@ -86,7 +86,7 @@ void setup()
     lcd.setCharMinWd(5);
     lcd.setDigitMinWd(5);
     lcd.setContrast(47);
-    lcd.printStr(ALIGN_CENTER, 0, "12345678901234567890");
+    lcd.printStr(ALIGN_CENTER, 0, "12345678901234567890"); // check width of display //
 }
 
 int timer = 0;
@@ -177,12 +177,17 @@ void processLoop(void)
 
 
 // Rotary encoder interrupt service routines (Pro Micro) //
+
+/*  Standard interrupt routine, disable interrupts, read port masked for the bits we are interested in,
+    compare result, take appropriate action and re-enable interrupts again
+*/
+
 void PinA()
 {
     cli();
-    //printBinary(PIND);
+    //printBinary(PIND); // uncomment to print and ensure you have the right port as it differs with processor //
     reading = PIND & 0x3;
-    //printBinary(reading);
+    //printBinary(reading); // ditto
     if(reading == B00000011 & aMask)
     {
         encoderPos ++;
@@ -196,9 +201,9 @@ void PinA()
 void PinB()
 {
     cli();
-    //printBinary(PIND);
+    //printBinary(PIND); // uncomment to print and ensure you have the right port as it differs with processor //
     reading = PIND & 0x3;
-    //printBinary(reading);
+    //printBinary(reading); // ditto
     if (reading == B00000011 && bMask)
     {
         encoderPos --;

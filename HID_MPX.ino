@@ -37,7 +37,7 @@ volatile byte oldEncPos  = 0;
 volatile byte reading    = 0;
 
 unsigned long currentTime;
-unsigned long sPustTime;
+unsigned long sPushTime;
 unsigned long releaseTime;
 unsigned long downTime = 0;
 unsigned long longPressTime = 1000;
@@ -132,15 +132,15 @@ void processLoop(void)
         }
         else if(buttonState == LOW)
         {
-            sPustTime = millis();
+            sPushTime = millis();
             action = 3;
         }
     }
-    else if(buttonState == LOW && releaseTime < sPustTime) // no state change + button pressed for long time //
+    else if(buttonState == LOW && releaseTime < sPushTime) // no state change + button pressed for long time //
     {
-        downTime = sPustTime + (millis() - sPustTime);
+        downTime = sPushTime + (millis() - sPushTime);
 
-        if(downTime > sPustTime + longPressTime)
+        if(downTime > sPushTime + longPressTime)
         {
             longPress = true;
             action = 5;

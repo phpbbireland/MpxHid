@@ -99,6 +99,8 @@ void loop()
 
 void processLoop(void)
 {
+    getButtonAction();
+    
     if(encoderPos > numMenus) encoderPos = 0;
     if(encoderPos < 0) encoderPos = numMenus;
     
@@ -117,38 +119,6 @@ void processLoop(void)
         oldEncPos = encoderPos;
         lcdClearLine(0);
         lcd.printStr(ALIGN_CENTER, 0, itoa(encoderPos, lineBuffer, 10));
-    }
-
-    byte buttonState = digitalRead (pinS);
-
-    if(oldButtonState != buttonState) // state change //
-    {
-        oldButtonState = buttonState;
-        lcdClearLine(2);
-        if(buttonState == HIGH)
-        {
-            releaseTime = millis();
-            action = 4;
-        }
-        else if(buttonState == LOW)
-        {
-            sPushTime = millis();
-            action = 3;
-        }
-    }
-    else if(buttonState == LOW && releaseTime < sPushTime) // no state change + button pressed for long time //
-    {
-        downTime = sPushTime + (millis() - sPushTime);
-
-        if(downTime > sPushTime + longPressTime)
-        {
-            longPress = true;
-            action = 5;
-        }
-        else
-        {
-            longPress = false;
-        }
     }
 
     lcdClearLine(5);
@@ -228,4 +198,40 @@ void printBinary(byte inByte)
 void lcdClearLine(int line)
 {
     if(newAction) lcd.printStr(ALIGN_LEFT, line,"              ");
+}
+
+void getButtonAction()
+{
+    buttonState = digitalRead (pinS);
+
+    if(oldButtonState != buttonState) // state change //
+    {
+        oldButtonState = buttonState;
+        
+        if(buttonState == HIGH)
+        {
+          releaseTime = millis();
+          action = 4; 
+        }
+        else if(buttonState == LOW)
+        {
+          sPushTime = millis();
+        }
+        //downTime = sPushTime = millis();
+
+        if(sPushTime + debounceTime > millis())
+        {
+           action = 3;
+        }
+    }
+    else if(buttonState == LOW && releaseTime < sPushTime) // no state change + button pressed for long time //
+    {
+        downTime = sPushTime + (millis() - sPushTime);
+        
+        if(downTime > sPushTime + longPressTime)
+        {
+          longPress = true; action = 5;
+        }
+        else { longPress = false; }
+    }
 }

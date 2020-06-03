@@ -12,6 +12,7 @@
     The following code was inspired by Pawel A. Hernik & Simon Merrett.
 
     Supports: Rotation Left/Right, Button Press, Button Release and Button Long Press...
+	Wed 03 Jun 2020 11:14:19 IST
 */
 
 #include "HID-Project.h"
@@ -28,7 +29,7 @@
 #define RIGHT 2
 #define ENTER 3
 #define UP    4
-#define LONG  5 
+#define LONG  5
 
 
 static byte pinA = 2;
@@ -85,7 +86,7 @@ static unsigned int bas = 50;
 static unsigned int tre = 50;
 
 char *menuTxt[] = {"Volume", "Surround", "Bass", "Treble", "Tracks", "Backlight", "Contrast"};
-char buf[50];
+char buf[20];
 
 /*
 const byte UpChar[] PROGMEM = {
@@ -162,63 +163,68 @@ void processLoop(void)
 
     if(oldAction != action) { oldAction = action; newAction = true; } else { newAction = false; }
     if(newAction && action == ENTER) { etoggle = !etoggle;}
-   
+
     if(!etoggle && !mtoggle)
     {
-      paintMenu();
+		paintMenu();
     }
 
     else if(etoggle)
     {
-      mtoggle = !mtoggle;
-      lcd.setContrast(35);
-      oldEncyPos = encoderxPos;
-      lcd.setCharMinWd(5);
-      lcd.setDigitMinWd(5);
-       
-       switch(encoderxPos+menuStart)
-       {
-        case 0:
-        case 1:
-        case 2:
-        case 3: setLevels(encoderxPos + menuStart + 1); break;
-        case 4: playTrack(lastTrack); break;
-        case 5: setBacklight(); break;
-        case 6: setContrast(); break;
-       }
-       
-       encoderxPos = oldEncyPos;
+		mtoggle = !mtoggle;
+		lcd.setContrast(35);
+		oldEncyPos = encoderxPos;
+		lcd.setCharMinWd(5);
+		lcd.setDigitMinWd(5);
+
+		switch(encoderxPos+menuStart)
+		{
+			case 0:
+			case 1:
+			case 2:
+			case 3: setLevels(encoderxPos + menuStart + 1); break;
+			case 4: selectTrack(lastTrack); break;
+			case 5: setBacklight(); break;
+			case 6: setContrast(); break;
+		}
+
+		encoderxPos = oldEncyPos;
     }
 
     if(newAction  || (!newAction && action == 3) || (!newAction && action == 5))
     {
       debugReport();
-    }    
+    }
 
     switch(action)
     {
       case 0: break;
-      
+
       case 1: if(!etoggle)
               {
                 if(encoderxPos == 0 && menuStart > 0) { menuStart--; lcd.clrScr(); paintMenu(); }
                 if(encoderxPos < 0) { encoderxPos = 0; }
               }
               break;
-              
+
       case 2: if(!etoggle)
               {
                 if(encoderxPos == 6 && menuStart < 1) { menuStart++; lcd.clrScr(); paintMenu(); }
                 if(encoderxPos > 5) { encoderxPos = 5; }
               }
               break;
-              
+
       case 3: break;
       case 4: break;
       case 5: break; encoderxPos = 0; menuStart = 0; lcd.setContrast(35); break;
     }
 }
 
+/*
+ * formatMenu()
+ * ------------
+ * This function simply draws the main menu, highlighting the current option...
+ */
 void paintMenu()
 {
     for (int i = 0; i < numScrLines; i++)
@@ -226,187 +232,219 @@ void paintMenu()
         lcd.setInvert(i == encoderxPos ? 1 : 0);
         formatMenu(menuTxt[i + menuStart], buf, 16);
         lcd.printStr(ALIGN_LEFT, i, buf);
-    }  
+    }
 }
 
+/*
+ * formatMenu()
+ * ------------
+ * This function copies an array element (*in) to a buffer (*out), padding with spaces if necessary...
+ *
+ */
 void formatMenu(char *in, char *out, int num)
 {
-  int j = strlen(in);
-  out[0] = ' ';
-  strncpy(out + 1, in, j++);
-  for (; j < num; j++) out[j] = ' ';
-  out[j] = 0;
+	int j = strlen(in);
+	out[0] = ' ';
+	strncpy(out + 1, in, j++);
+	for (; j < num; j++) out[j] = ' ';
+	out[j] = 0;
 }
 
+/*
+ * setLevels()
+ * -----------
+ * Used to set levels for Volume, Bass, Treble and Surround Sound
+ * Left and Right rotations change the selected level...
+ * The graphic is purely an indication of action (its not actual as there is no feedback from device under control)...
+ * Level for each setting are retained but reset to defaults on power down...
+ */
 void setLevels(int input)
 {
-  mtoggle = 1;
-  int cper = 0;
-  if(mtoggle) lcd.clrScr();
+	mtoggle = 1;
+	int cper = 0;
+	if(mtoggle) lcd.clrScr();
 
-  switch(input)
-  {
-    case 1: encoderxPos = vol; cper = map(encoderxPos*2, 0, 168, 0, 700); lcd.printStr(ALIGN_CENTER, 0, "Volume"); lcd.printStr(ALIGN_RIGHT, 0, itoa(encoderxPos, lineBuffer, 10));break;
-    case 2: encoderxPos = sur; cper = map(encoderxPos*2, 0, 168, 0, 500); lcd.printStr(ALIGN_CENTER, 0, "Surround"); lcd.printStr(ALIGN_RIGHT, 0, itoa(encoderxPos, lineBuffer, 10));break;
-    case 3: encoderxPos = bas; cper = map(encoderxPos*2, 0, 168, 0, 100); lcd.printStr(ALIGN_CENTER, 0, "Bass"); lcd.printStr(ALIGN_RIGHT, 1, itoa(encoderxPos, lineBuffer, 10));break;
-    case 4: encoderxPos = tre; cper = map(encoderxPos*2, 0, 168, 0, 100); lcd.printStr(ALIGN_CENTER, 0, "Treble"); lcd.printStr(ALIGN_RIGHT, 1, itoa(encoderxPos, lineBuffer, 10));break;
-  }
-  action = 0;
-  while(action < 3)
-  {
-    getButtonAction();
-    if(action == 3 || action == 5) break;
-    
-    if (encoderxPos > 84) encoderxPos = 84; if (encoderxPos <  0) encoderxPos = 0;
-    
-    snprintf(buf, 6, "%d", cper);
-    lcd.fillWin(0, 2, encoderxPos, 1, 0xfe);
-    
-    if (encoderxPos < 84) lcd.fillWin(encoderxPos, 2, 84 - encoderxPos, 1, 0);
-    if(action == 1 || action == 2) { sendKey(input); }
-  }
-  mtoggle = 0;
+	switch(input)
+	{
+		case 1: encoderxPos = vol; cper = map(encoderxPos*2, 0, 168, 0, 700); lcd.printStr(ALIGN_CENTER, 0, "Volume"); lcd.printStr(ALIGN_RIGHT, 0, itoa(encoderxPos, lineBuffer, 10));break;
+		case 2: encoderxPos = sur; cper = map(encoderxPos*2, 0, 168, 0, 500); lcd.printStr(ALIGN_CENTER, 0, "Surround"); lcd.printStr(ALIGN_RIGHT, 0, itoa(encoderxPos, lineBuffer, 10));break;
+		case 3: encoderxPos = bas; cper = map(encoderxPos*2, 0, 168, 0, 100); lcd.printStr(ALIGN_CENTER, 0, "Bass"); lcd.printStr(ALIGN_RIGHT, 1, itoa(encoderxPos, lineBuffer, 10));break;
+		case 4: encoderxPos = tre; cper = map(encoderxPos*2, 0, 168, 0, 100); lcd.printStr(ALIGN_CENTER, 0, "Treble"); lcd.printStr(ALIGN_RIGHT, 1, itoa(encoderxPos, lineBuffer, 10));break;
+	}
+	action = 0;
+
+	while(action < 3)
+	{
+		getButtonAction();
+		if(action == 3 || action == 5) break;
+
+		if (encoderxPos > 84) encoderxPos = 84; if (encoderxPos <  0) encoderxPos = 0;
+
+		snprintf(buf, 6, "%d", cper);
+		lcd.fillWin(0, 2, encoderxPos, 1, 0xfe);
+
+		if (encoderxPos < 84) lcd.fillWin(encoderxPos, 2, 84 - encoderxPos, 1, 0);
+		if(action == 1 || action == 2) { sendKey(input); }
+	}
+	mtoggle = 0;
 }
 
-void playTrack(int input)
+/*
+ * selectTrack()
+ * -----------
+ * Allows for selection of track using Up/Down arrows
+ * Once selected, a long press will play the selected track...
+ */
+void selectTrack(int input)
 {
-  mtoggle = 1;
-  if(mtoggle) lcd.clrScr();
-  
-  encoderxPos = lastTrack; 
+	mtoggle = 1;
+	if(mtoggle) lcd.clrScr();
 
-  if(encoderxPos <  0) encoderxPos = 0;
-  if(encoderxPos > 99) encoderxPos = 99;
+	encoderxPos = lastTrack;
 
-  lcd.setContrast(52);
-  lcd.printStr(ALIGN_CENTER, 0, "Select");
-  lcd.printStr(ALIGN_CENTER, 1, "Track");  
-  
-  action = 0;
-  while(action < 3)
-  {
-    getButtonAction();
-    
-    if(action == 1)
-    {
-      lcdClearLine(3); lcd.printStr(ALIGN_CENTER, 3, "UP"); sendKey(5);
-    }
-    else if (action == 2)
-    {
-      lcdClearLine(3); lcd.printStr(ALIGN_CENTER, 3, "DOWN"); sendKey(5);
-    }
-    if(action == 3 || action == 5) break;
-  }
-  
-  lastTrack = encoderxPos ;
-  mtoggle = 0;
+	if(encoderxPos <  0) encoderxPos = 0;
+	if(encoderxPos > 99) encoderxPos = 99;
+
+	lcd.setContrast(52);
+	lcd.printStr(ALIGN_CENTER, 0, "Select");
+	lcd.printStr(ALIGN_CENTER, 1, "Track");
+
+	action = 0;
+	while(action < 3)
+	{
+		getButtonAction();
+
+		if(action == 1)
+		{
+			lcdClearLine(3); lcd.printStr(ALIGN_CENTER, 3, "UP"); sendKey(5);
+		}
+		else if (action == 2)
+		{
+			lcdClearLine(3); lcd.printStr(ALIGN_CENTER, 3, "DOWN"); sendKey(5);
+		}
+		if(action == 3 || action == 5) break;
+	}
+
+	lastTrack = encoderxPos ;
+	mtoggle = 0;
 }
 
+/*
+ * setBacklight()
+ * -------------
+ * Set backlight of LCD
+ */
 void setBacklight()
 {
-  mtoggle = 1;
-  if(mtoggle) lcd.clrScr();
-  lcd.setContrast(32);
+	mtoggle = 1;
+	if(mtoggle) lcd.clrScr();
+	lcd.setContrast(32);
 
-  while(action != 3)
-  {
-    if (encoderxPos > 84) encoderxPos = 84;
-    if (encoderxPos <  0) encoderxPos = 0;
-    
-    int cper = map(encoderxPos, 0, 84, 0, 100);
-    
-    snprintf(buf, 6, " %d%c ", cper, '%');
-    lcd.printStr(ALIGN_CENTER, 4
-    +, buf);
-    lcd.fillWin(0, 2, encoderxPos, 1, 0xfe);
-    
-    analogWrite(N5110_BACKLIGHT, 255 - cper);
+	while(action != 3)
+	{
+		if (encoderxPos > 84) encoderxPos = 84;
+		if (encoderxPos <  0) encoderxPos = 0;
 
-    getButtonAction();
-    if(action == 3 || action == 5) break;
-  }
-  mtoggle = 0;
+		int cper = map(encoderxPos, 0, 84, 0, 100);
+
+		snprintf(buf, 6, " %d%c ", cper, '%');
+		lcd.printStr(ALIGN_CENTER, 4, buf);
+		lcd.fillWin(0, 2, encoderxPos, 1, 0xfe);
+
+		analogWrite(N5110_BACKLIGHT, 255 - cper);
+
+		getButtonAction();
+		if(action == 3 || action == 5) break;
+	}
+	mtoggle = 0;
 }
 
+/*
+ * setContrast()
+ * -------------
+ * Set contrast of LCD
+ */
 void setContrast()
 {
-  static bool start = false;
-  mtoggle = 1;
-  if(mtoggle) lcd.clrScr();
+	static bool start = false;
+	mtoggle = 1;
+	if(mtoggle) lcd.clrScr();
 
-  while(action != 3)
-  {
-    getButtonAction();
-    if(start == false) // set mid position starting //
-    {
-      start = true; encoderxPos = 39;
-    }
-    // usable contrast for this display, depends on speed of loop among other things //
-    if (encoderxPos > 51) encoderxPos = 51;
-    if (encoderxPos < 27) encoderxPos = 27;
+	while(action != 3)
+	{
+		getButtonAction();
+		if(start == false) // set mid position starting //
+		{
+		  start = true; encoderxPos = 39;
+		}
+		// usable contrast for this display, depends on speed of loop among other things //
+		if (encoderxPos > 51) encoderxPos = 51;
+		if (encoderxPos < 27) encoderxPos = 27;
 
-    lcd.printStr(ALIGN_CENTER, 2, "Adjust");
-    lcd.printStr(ALIGN_CENTER, 3, "Contrast");
-    lcd.setContrast(encoderxPos);
-    if(action == 3 || action == 5) break;
-  }
-  mtoggle = 0;
+		lcd.printStr(ALIGN_CENTER, 2, "Adjust");
+		lcd.printStr(ALIGN_CENTER, 3, "Contrast");
+		lcd.setContrast(encoderxPos);
+		if(action == 3 || action == 5) break;
+	}
+	mtoggle = 0;
 }
 
+/*
+ * used for testing, remove for release...
+ */
+void debugReport(void)
+{
+	if(action == 2)
+	{
+		Serial.print("Right: ");
+	}
+	else if(action == 1)
+	{
+		Serial.print("Left:  ");
+	}
 
-  void debugReport(void)
-  {
-    if(action == 2)
-    {
-      Serial.print("Right: ");
-    }
-    else if(action == 1)
-    {
-      Serial.print("Left:  ");
-    }
+	Serial.print("encoderxPos [");
+	Serial.print(encoderxPos);
+	Serial.print("] menuMode [");
+	Serial.print(menuMode);
+	Serial.print("] menuStart [");
+	Serial.print(menuStart);
 
-      Serial.print("encoderxPos [");
-      Serial.print(encoderxPos);
-      Serial.print("] menuMode [");
-      Serial.print(menuMode);
-      Serial.print("] menuStart [");
-      Serial.print(menuStart);
-
-      switch(menuMode)
-      {
-        case 0:
-            Serial.print("] vol = [");
-            Serial.print(vol);
-        break;
-        case 1:
-            Serial.print("] sur = [");
-            Serial.print(sur);
-        break;
-        case 2:
-            Serial.print("] bas = [");
-            Serial.print(bas);
-        break;
-        case 3:
-            Serial.print("] tre = [");
-            Serial.print(tre);
-        break;
-      }
-      Serial.print("] Menus[");
-      Serial.print(numMenus);
-      Serial.print("] Action [ ");
-      Serial.print(action);
-      Serial.print("] NewAction [ ");
-      Serial.print(newAction);
-      Serial.print("] Src[");
-      Serial.print(numScrLines - 1);
-      Serial.print("] mStart[");
-      Serial.print(menuStart);
-      Serial.print("] tog[");
-      Serial.print(etoggle);
-      Serial.print("] page[");
-      Serial.print(currentPage);
-      Serial.println("]");
-  }
+	switch(menuMode)
+	{
+		case 0:
+			    Serial.print("] vol = [");
+			    Serial.print(vol);
+		break;
+		case 1:
+			    Serial.print("] sur = [");
+			    Serial.print(sur);
+		break;
+		case 2:
+			    Serial.print("] bas = [");
+			    Serial.print(bas);
+		break;
+		case 3:
+			    Serial.print("] tre = [");
+			    Serial.print(tre);
+		break;
+	}
+	Serial.print("] Menus[");
+	Serial.print(numMenus);
+	Serial.print("] Action [ ");
+	Serial.print(action);
+	Serial.print("] NewAction [ ");
+	Serial.print(newAction);
+	Serial.print("] Src[");
+	Serial.print(numScrLines - 1);
+	Serial.print("] mStart[");
+	Serial.print(menuStart);
+	Serial.print("] tog[");
+	Serial.print(etoggle);
+	Serial.print("] page[");
+	Serial.print(currentPage);
+	Serial.println("]");
+}
 
 
 
@@ -443,6 +481,11 @@ void PinB()
     sei();
 }
 
+/*
+ * printBinary()
+ * -------------
+ * used to display a ports status in bits, Example: printBinary(PIND);
+ */
 void printBinary(byte inByte) // to print binary //
 {
     Serial.print("[");
@@ -464,6 +507,13 @@ void lcdClearLine(int line)
     if(newAction) lcd.printStr(ALIGN_LEFT, line,"              ");
 }
 
+/*
+ * getButtonAction()
+ * -----------------
+ * Sets global variable: action
+ * button press (action = 3), button release (action = 4), long press (action = 5)
+ * Includes debounce (debounceTime)
+ */
 void getButtonAction()
 {
     buttonState = digitalRead (pinS);
@@ -471,17 +521,16 @@ void getButtonAction()
     if(oldButtonState != buttonState) // state change //
     {
         oldButtonState = buttonState;
-        
+
         if(buttonState == HIGH)
         {
           releaseTime = millis();
-          action = 4; 
+          action = 4;
         }
         else if(buttonState == LOW)
         {
           sPushTime = millis();
         }
-        //downTime = sPushTime = millis();
 
         if(sPushTime + debounceTime > millis())
         {
@@ -491,7 +540,7 @@ void getButtonAction()
     else if(buttonState == LOW && releaseTime < sPushTime) // no state change + button pressed for long time //
     {
         downTime = sPushTime + (millis() - sPushTime);
-        
+
         if(downTime > sPushTime + longPressTime)
         {
           longPress = true; action = 5;
@@ -500,17 +549,23 @@ void getButtonAction()
     }
 }
 
+/*
+ * sendKey()
+ * ---------
+ * Send a key stroke depending which menu iten is current...
+ *
+ */
 void sendKey(int input)
 {
-  switch(input)
-  {
-    case 1: if(action == 1) BootKeyboard.press(46); else BootKeyboard.press(44); break; // volume , .
-    case 2: if(action == 1) BootKeyboard.press(39); else BootKeyboard.press(59); break; // surround ; '
-    case 3: if(action == 1) BootKeyboard.press(34); else BootKeyboard.press(58); break; // bass : @
-    case 4: if(action == 1) BootKeyboard.press(125); else BootKeyboard.press(123); break; //treble { }
-    case 5: if(action == 1) BootKeyboard.press(KEY_DOWN_ARROW); else BootKeyboard.press(KEY_UP_ARROW); break;
-    default: break;
-  }
-  BootKeyboard.releaseAll();
-  action = 0;
+	switch(input)
+	{
+		case 1: if(action == 1) BootKeyboard.press(46); else BootKeyboard.press(44); break; // volume , .
+		case 2: if(action == 1) BootKeyboard.press(39); else BootKeyboard.press(59); break; // surround ; '
+		case 3: if(action == 1) BootKeyboard.press(34); else BootKeyboard.press(58); break; // bass : @
+		case 4: if(action == 1) BootKeyboard.press(125); else BootKeyboard.press(123); break; //treble { }
+		case 5: if(action == 1) BootKeyboard.press(KEY_DOWN_ARROW); else BootKeyboard.press(KEY_UP_ARROW); break;
+		default: break;
+	}
+	BootKeyboard.releaseAll();
+	action = 0;
 }

@@ -552,7 +552,7 @@ void getButtonAction()
 /*
  * sendKey()
  * ---------
- * Send a key stroke depending which menu iten is current...
+ * Send a key stroke depending which menu item is current...
  *
  */
 void sendKey(int input)
